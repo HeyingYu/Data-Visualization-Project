@@ -1,35 +1,46 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-
-<style>
-
-path {
-
-  stroke: #fff;
-  stroke-width: .5;
-  stroke-dasharray: 1;
-  fill: #afafaf;
-  
-}
-
-#neighborhoodPopover { 
-  position: absolute;     
-  text-align: center;         
-  padding: 2px;       
-  font: 12px sans-serif;    
-  background: #fff; 
-  border: 0px;    
-  border-radius: 8px;     
-  pointer-events: none;
-  opacity: 0;     
-}
-
-</style>
-
-<body>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8'>
+    <title>Assignment 1 - Populating the DOM with graphical marks</title>
+    <script type='text/javascript' src='d3.js'></script>
+  </head>
+  <style>
+    path {
+      stroke: #fff;
+      stroke-width: .5;
+      stroke-dasharray: 1;
+      fill: #afafaf;
+    }
+    #neighborhoodPopover { 
+      position: absolute;     
+      text-align: center;         
+      padding: 2px;       
+      font: 12px sans-serif;    
+      background: #fff; 
+      border: 0px;    
+      border-radius: 8px;     
+      pointer-events: none;
+      opacity: 0;     
+    }
+  </style>
+  <body>
   <svg width="960" height="720"></svg>
   <div id='neighborhoodPopover'> </div>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script src="https://d3js.org/topojson.v1.min.js"></script>
-<script type='text/javascript' src='nyc_vis.js'></script>
-</body>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/topojson.v1.min.js"></script>
+  <script type='text/javascript' src='nyc_vis.js'></script>
+  <script type='text/javascript'>
+    d3.json('nyc.json').then(function(data)  {
+        nyc_data = data;
+        console.log(nyc_data)
+        return d3.csv("AB_NYC_2019.csv");
+      }).then(function(data)  {
+        airbnb_data = data;
+        console.log(airbnb_data)
+        plot_it();
+      })
+  </script>
+  </script>
+  </body>
+</html>
