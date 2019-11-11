@@ -33,11 +33,9 @@
   <script type='text/javascript'>
     d3.json('nyc.json').then(function(data)  {
         nyc_data = data;
-        console.log(nyc_data)
         return d3.csv("AB_NYC_2019.csv");
       }).then(function(data)  {
         airbnb_data = data;
-        console.log(airbnb_data)
         plot_it();
       })
   </script>
