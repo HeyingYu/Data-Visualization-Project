@@ -33,7 +33,7 @@
   <script type='text/javascript'>
     d3.json('nyc.json').then(function(data)  {
         nyc_data = data;
-        return d3.csv("AB_NYC_2019.csv");
+        return d3.csv("AB_NYC_2019_cleaned.csv");
       }).then(function(data)  {
         airbnb_data = data;
         process_data();

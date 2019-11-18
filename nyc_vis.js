@@ -18,6 +18,20 @@ function create_circle_element(circle_datum)  {
   return circle_elem;
 }
 
+function color_scale_setter(price) {
+  if (price < 50) {
+    return 'blue'
+  } else if (price < 100){
+    return 'green'
+  } else if (price < 150){
+    return 'yellow'
+  } else if (price < 200){
+    return 'orange'
+  } else {
+    return 'red'
+  }
+}
+
 function process_data(){
     var width = 460,
     height = 1000;
@@ -28,7 +42,10 @@ function process_data(){
     all_mins[key] = d3.min(airbnb_data, d => parseInt(d[key]));
     all_maxs[key] = d3.max(airbnb_data, d => parseInt(d[key]));
     });
+    console.log(all_maxs)
+    console.log(all_mins)
     price_scale = d3.scaleLinear().domain([all_mins['price'],all_maxs['price']]).range([height-50,0])
+    color_scale = d3.scaleLinear().domain([all_mins['price'],all_maxs['price']]).range([20,360])
     var name_scale=d3.scalePoint()
                      .domain(airbnb_data.map(function(d,i){return i}))
                      .range([50,width])
@@ -110,7 +127,7 @@ function plot_it()  {
      .attr('cx',function(d){ return projection([d.longitude,d.latitude])[0]})
      .attr('cy',function(d){ return projection([d.longitude,d.latitude])[1]})
      .attr('r',0.5)
-     .attr('fill','blue')
+     .attr('fill',function(d){ return color_scale_setter(d.price)})
      .attr('opacity',0.3)
 
   // setup brush - its geometric extent, and add it to our lines group
@@ -118,6 +135,9 @@ function plot_it()  {
   d3.select('#dataviz_brushing').call(brush)
 
   // setup_vis()
+  // console.log(color_scale(d.price));
+  // return d3.hcl(360,color_scale(d.price),35)}) // blue
+  //color_scale_setter(d.price)
 
 }
 
@@ -132,7 +152,7 @@ function updateChart() {
   extent = d3.event.selection
 
   var myCircles = svg.selectAll('circle')
-  myCircles.attr('fill', 'blue');
+  // myCircles.attr('fill', 'blue');
 
   myCircles.filter(function(d)  {
     var cur_long = projection([d.longitude,d.latitude])[0];
