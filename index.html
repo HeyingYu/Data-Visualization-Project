@@ -31,7 +31,7 @@
   <script src="https://d3js.org/topojson.v1.min.js"></script>
   <script type='text/javascript' src='nyc_vis.js'></script>
   <script type='text/javascript'>
-    d3.json('nyc.json').then(function(data)  {
+    d3.json('updated-nyc.json').then(function(data)  {
         nyc_data = data;
         return d3.csv("AB_NYC_2019_cleaned.csv");
       }).then(function(data)  {

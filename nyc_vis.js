@@ -130,9 +130,9 @@ function plot_it()  {
      .attr('fill',function(d){ return color_scale_setter(d.price)})
      .attr('opacity',0.3)
 
-  // setup brush - its geometric extent, and add it to our lines group
-  brush.extent([[0,0],[height,width]]).on("start end", updateChart)
-  d3.select('#dataviz_brushing').call(brush)
+  // // setup brush - its geometric extent, and add it to our lines group
+  // brush.extent([[0,0],[height,width]]).on("start end", updateChart)
+  // d3.select('#dataviz_brushing').call(brush)
 
   // setup_vis()
   // console.log(color_scale(d.price));
