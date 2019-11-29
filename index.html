@@ -25,15 +25,25 @@
     }
   </style>
   <body>
-  <svg width="960" height="720" id="dataviz_brushing"></svg>
-  <div id='neighborhoodPopover'> </div>
+  <div style="width: 100%; overflow: hidden;">
+    <div style="width: 960px; float: left;">
+      <svg width="960" height="720" id="dataviz_brushing"></svg>
+    </div>
+    <div style="margin-left: 960px;">
+      <div id="PricePlot" align="center" style="height: 300px; width: 300px;"></div>
+      <div id="AvailabilityPlot" align="center" style="height: 300px; width: 300px;"></div>
+      <div id="ReviewPlot" align="center" style="height: 300px; width: 300px;"></div>
+    </div>
+    <div id='neighborhoodPopover'> </div>
+  </div>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/topojson.v1.min.js"></script>
+  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
   <script type='text/javascript' src='nyc_vis.js'></script>
   <script type='text/javascript'>
     d3.json('updated-nyc.json').then(function(data)  {
         nyc_data = data;
-        return d3.csv("AB_NYC_2019_cleaned.csv");
+        return d3.csv("AB_NYC_2019_cleaned2.csv");
       }).then(function(data)  {
         airbnb_data = data;
         process_data();
