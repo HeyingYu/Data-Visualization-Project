@@ -28,6 +28,7 @@
   <div style="width: 100%; overflow: hidden;">
     <div style="width: 960px; float: left;">
       <svg width="960" height="720" id="dataviz_brushing"></svg>
+      <svg width="900" height="900" id="scatter_plot"></svg>
     </div>
     <div style="margin-left: 960px;">
       <div id="PricePlot" align="center" style="height: 300px; width: 300px;"></div>
@@ -46,6 +47,12 @@
         return d3.csv("AB_NYC_2019_cleaned2.csv");
       }).then(function(data)  {
         airbnb_data = data;
+        selected_atts = ['availability_365','lattitude','longitude', 'price', 'minimum_nights', 'reviews_per_month']
+        airbnb_data.forEach(d => {
+          selected_atts.forEach(att => {
+            d[att] = +d[att];
+          })
+        })
         process_data();
         plot_it();
       })

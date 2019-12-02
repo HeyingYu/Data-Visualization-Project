@@ -3,7 +3,13 @@ var svg = d3.select("svg"),
     height = +svg.attr("height");
 
 // initialize brush
-var brush = d3.brush()
+var brush = d3.brush().extent([[0,0],[height,width]]).on("brush end", updateChart);
+
+var zoom = d3.zoom()
+    .scaleExtent([1, Infinity])
+    .translateExtent([[0, 0], [width, height]])
+    .extent([[0, 0], [width, height]])
+    .on("zoom", zoomed);
 
 function create_dom_element(element_name)  {
   return document.createElementNS('http://www.w3.org/2000/svg', element_name);
@@ -21,6 +27,16 @@ function color_scale_setter(price) {
   } else {
     return 'red'
   }
+}
+
+function zoomed() {
+  // if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
+  console.log('zooming')
+  // var t = d3.event.transform;
+  // x.domain(t.rescaleX(x2).domain());
+  // focus.select(".area").attr("d", area);
+  // focus.select(".axis--x").call(xAxis);
+  // context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
 }
 
 function process_data(){
@@ -93,12 +109,12 @@ function plot_it()  {
       .rotate([96, -39])
       .fitSize([width, height], nyc_data)
 
+      // .call(d3.zoom().on("zoom", function () {
+      //   console.log('zooming')
+      //   svg.attr("transform", d3.event.transform)
+      // }))
   svg.append('g')
       .attr('id','map')
-      .call(d3.zoom().on("zoom", function () {
-        console.log('zooming')
-        svg.attr("transform", d3.event.transform)
-      }))
       .selectAll("path")
       .data(nyc_data.features)
       .enter().append("path")
@@ -150,8 +166,11 @@ function plot_it()  {
      .attr('room_type', function(d){ return d.room_type})
 
   // setup brush - its geometric extent, and add it to our lines group
-  brush.extent([[0,0],[height,width]]).on("start end", updateChart)
   d3.select('#dataviz_brushing').call(brush)
+
+  console.log("here")
+
+  plot_scatter()
 
   // setup_vis()
   // console.log(color_scale(d.price));
@@ -299,5 +318,60 @@ function drawScatterPlot(selectedCircles) {
     availabilitychart.render();
   }
 
+}
+
+function create_axes_example1(base_svg, y_shift, att_scale)  {
+  base_svg.append('g').attr('id', 'leftaxis')
+    .attr('transform', 'translate(106,0)').call(d3.axisLeft(att_scale))
+
+  d3.select('#leftaxis').selectAll('path').remove()
+  d3.select('#leftaxis').selectAll('line').remove()
+
+  base_svg.append('g').attr('id', 'bottomaxis')
+    .attr('transform', 'translate(0,'+y_shift+')').call(d3.axisBottom(att_scale))
+
+  d3.select('#bottomaxis').selectAll('path').remove()
+  d3.select('#bottomaxis').selectAll('line').remove()
+}
+
+
+function plot_scatter()  {
+  var svg1 = d3.select('#scatter_plot');
+  var x_range_pad = 50, y_range_pad = 130;
+  var width = svg1.attr('width'), height = svg1.attr('height');
+
+  console.log("ba")
+
+  var att_scale = d3.scaleBand().domain(selected_atts).range([y_range_pad,height-x_range_pad]).paddingInner(0.2);
+  var plot_height = att_scale.bandwidth();
+  var x_quantitative_scales = {}, y_quantitative_scales = {};
+  selected_atts.forEach((att,i) =>  {
+    var extent = d3.extent(airbnb_data, d => d[att]);
+    x_quantitative_scales[att] = d3.scaleLinear().domain([extent[0],extent[1]]).range([0,plot_height]).nice();
+    y_quantitative_scales[att] = d3.scaleLinear().domain([extent[0],extent[1]]).range([plot_height,0]).nice();
+  });
+
+  svg1.selectAll('cols').data(selected_atts).enter().append('g')
+    .attr('transform', d => 'translate('+att_scale(d)+',0)')
+    .selectAll('rows').data((d,i) => {
+      var unique_rows = selected_atts.filter((_,j) => i <= j);
+      return unique_rows.map(d_new => [d,d_new]);
+    })
+    .enter().append('g')
+    .attr('transform', d => 'translate(20,'+att_scale(d[1])+')').attr('class', 'splom')
+    .selectAll('points').data(att => {
+      return airbnb_data.map(d => [d[att[0]], d[att[1]]]);
+    })
+    .enter().append('circle')
+    .attr('r', 1).attr('fill', d3.hcl(20,60,70)).attr('opacity', 0.4)
+
+  svg1.selectAll('.splom').each(function(att)  {
+    var scale_x = x_quantitative_scales[att[0]], scale_y = y_quantitative_scales[att[1]];
+    d3.select(this).selectAll('circle').attr('cx', d => scale_x(d[0])).attr('cy', d => scale_y(d[1]))
+    d3.select(this).append('g').attr('transform', 'translate(0,0)').call(d3.axisLeft(scale_y).ticks(4))
+    d3.select(this).append('g').attr('transform', 'translate(0,'+plot_height+')').call(d3.axisBottom(scale_x).ticks(4))
+  })
+
+  create_axes_example1(svg1,(height-x_range_pad+20),att_scale)
 }
 
