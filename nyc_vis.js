@@ -1,43 +1,21 @@
-var svg = d3.select("svg"),
+var svg = d3.select("svg")
     width = +svg.attr("width"),
     height = +svg.attr("height");
 
-// initialize brush
-var brush = d3.brush().extent([[0,0],[height,width]]).on("brush end", updateChart);
-
-var zoom = d3.zoom()
-    .scaleExtent([1, Infinity])
-    .translateExtent([[0, 0], [width, height]])
-    .extent([[0, 0], [width, height]])
-    .on("zoom", zoomed);
+var brush = d3.brush().extent([[0,0],[height,width]]).on("brush end", updateChart),idleTimeout,idleDelay = 350;
+var idleTimeout
+function idled() { idleTimeout = null; }
+  svg .append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill","white")
+      .on("click", brush);
 
 function create_dom_element(element_name)  {
   return document.createElementNS('http://www.w3.org/2000/svg', element_name);
 }
 
-function color_scale_setter(price) {
-  if (price < 50) {
-    return 'blue'
-  } else if (price < 100){
-    return 'green'
-  } else if (price < 150){
-    return 'yellow'
-  } else if (price < 200){
-    return 'orange'
-  } else {
-    return 'red'
-  }
-}
-
-function zoomed() {
-  // if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
-  console.log('zooming')
-  // var t = d3.event.transform;
-  // x.domain(t.rescaleX(x2).domain());
-  // focus.select(".area").attr("d", area);
-  // focus.select(".axis--x").call(xAxis);
-  // context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
-}
 
 function process_data(){
     var width = 460,
@@ -49,53 +27,13 @@ function process_data(){
       all_mins[key] = d3.min(airbnb_data, d => parseInt(d[key]));
       all_maxs[key] = d3.max(airbnb_data, d => parseInt(d[key]));
     });
-
     price_domain = [all_mins['price'],all_maxs['price']]
     hue_scale = d3.scaleLinear().range([60,114]).domain(price_domain)
     chroma_scale = d3.scaleLinear().range([35,32]).domain(price_domain)
     luminance_scale = d3.scaleLinear().range([81,27]).domain(price_domain)
-
-    // var myCircle = svg.append('g')
-    // .attr('id','airbnb')
-    // .selectAll('cirlce')
-    // .data(airbnb_data)
-    // .enter()
-    // .append('circle')
-    // .attr('cx',function(d){ return projection([d.longitude,d.latitude])[0]})
-    // .attr('cy',function(d){ return projection([d.longitude,d.latitude])[1]})
-    // .attr('r',0.8)
-    // .attr('fill',function(d){ return d3.hcl(hue_scale(d.price),chroma_scale(d.price),luminance_scale(d.price))})
-    // .attr('stroke',"black")
-    // .attr("stroke-width",0.1)
-    // .attr('stroke',function(d){ return color_scale_setter(d.price)})
-    // .attr('opacity',0.2)
-
-    // svg1.append("g")
-    //     .attr('id','airbnb')
-    //     .selectAll('cirlce')
-    //     .data(airbnb_data)
-    //     .enter()
-    //     .append('circle')
-    //     .attr('cx',function(d,i){ return name_scale(i)})
-    //     .attr('cy',function(d){ return price_scale(d.price)})
-    //     .attr('fill','black')
-    //     .attr('r',0.5)
-    //     .attr('opacity',0.8)
-
-    // X_axis_scale = d3.axisBottom().scale(name_scale)
-    // Y_axis_scale=d3.axisLeft().scale(price_scale)
-
-    // svg1.append('g')
-    //     .attr('transform', 'translate('+0+','+(height-50)+')')
-    //     .attr('id','Axis_X')
-    //     .call(X_axis_scale)
-
-
-    // svg1.append('g')
-    //     .attr('transform', 'translate('+50+','+0+')')
-    //     .attr('id','Axis_Y')
-    //     .call(Y_axis_scale)
 }
+
+
 
 function plot_it()  {
   var path = d3.geoPath()
@@ -109,17 +47,15 @@ function plot_it()  {
       .rotate([96, -39])
       .fitSize([width, height], nyc_data)
 
-      // .call(d3.zoom().on("zoom", function () {
-      //   console.log('zooming')
-      //   svg.attr("transform", d3.event.transform)
-      // }))
-  svg.append('g')
+  g = svg.append('g')
       .attr('id','map')
-      .selectAll("path")
+
+  g   .selectAll("path")
       .data(nyc_data.features)
       .enter().append("path")
       .attr("d", path)
-      .on("mouseenter", function(d) {
+
+  g   .on("mouseenter", function(d) {
           d3.select(this)
           .style("stroke-width", 1.5)
           .style("stroke-dasharray", 0)
@@ -130,9 +66,12 @@ function plot_it()  {
           .style("left", (d3.event.pageX) + "px")
           .style("top", (d3.event.pageY) + "px")
           .text(d.properties.neighborhood)
-
         })
-        .on("mouseleave", function(d) {
+
+  g   .call(brush)
+
+
+  g      .on("mouseleave", function(d) {
           d3.select(this)
           .style("stroke-width", .25)
           .style("stroke-dasharray", 1)
@@ -140,11 +79,13 @@ function plot_it()  {
           d3.select("#cneighborhoodPopoverountyText")
           .transition()
           .style("opacity", 0);
-        });
+  })
 
 
-  var myCircle = svg.append('g')
-     .attr('id','airbnb')
+
+
+  var myCircle =svg.append('g')
+     .attr("id","data")
      .selectAll('cirlce')
      .data(airbnb_data)
      .enter()
@@ -155,7 +96,7 @@ function plot_it()  {
      .attr('fill',function(d){ return d3.hcl(hue_scale(d.price),chroma_scale(d.price),luminance_scale(d.price))})
      .attr('stroke',"black")
      .attr("stroke-width",0.1)
-     .attr('stroke',function(d){ return color_scale_setter(d.price)})
+     .attr('stroke',"black")
      .attr('opacity',0.5)
      .attr('minimum_nights', function(d){ return d.minimum_nights})
      .attr('availability_365', function(d){ return d.availability_365})
@@ -165,33 +106,41 @@ function plot_it()  {
      .attr('price', function(d){ return d.price})
      .attr('room_type', function(d){ return d.room_type})
 
-  // setup brush - its geometric extent, and add it to our lines group
-  d3.select('#dataviz_brushing').call(brush)
 
-  console.log("here")
+  svg.on("dblclick",function(){
+      g   .transition()
+      .duration(750)
+      .attr("transform", "translate(" + width/2 + "," + height/2 +
+            ")scale(" + 1 + ")translate(" + -width/2 + "," + -height/2 + ")")
+      .style("stroke-width", 1.5);
 
-  plot_scatter()
+     svg .selectAll("circle"). transition()
+           . duration(750)
+           .attr("transform", "translate(" + width/2 + "," + height/2 +
+            ")scale(" + 1 + ")translate(" + -width/2 + "," + -height/2 + ")")
+           .style("stroke-width", 0.1)
+           .attr('r',1.3)
+  });
 
-  // setup_vis()
-  // console.log(color_scale(d.price));
-  // return d3.hcl(360,color_scale(d.price),35)}) // blue
-  //color_scale_setter(d.price)
-
+   plot_scatter()
 }
 
 
-// Function that is triggered when brushing is performed
+
+
+
+
+
 function updateChart() {
+
   var projection=d3.geoConicConformal()
       .parallels([33, 45])
       .rotate([96, -39])
       .fitSize([width, height], nyc_data)
   // Get the selection coordinate
-  extent = d3.event.selection
-
+    extent = d3.event.selection
+//
   var myCircles = svg.selectAll('circle')
-  myCircles.attr('fill',function(d){ return d3.hcl(hue_scale(d.price),chroma_scale(d.price),luminance_scale(d.price))});
-
   var selectedCircles = myCircles.filter(function(d)  {
     var cur_long = projection([d.longitude,d.latitude])[0];
     var cur_lat = projection([d.longitude,d.latitude])[1];
@@ -199,11 +148,38 @@ function updateChart() {
     var isBrushed = extent[0][0] <= cur_long && extent[1][0] >= cur_long && // Check X coordinate
               extent[0][1] <= cur_lat && extent[1][1] >= cur_lat  // And Y coordinate
     return isBrushed;
-    })
-
+  })
   selectedCircles.attr('fill', d => d3.hcl(10,40,65))
+
+
+  g   .selectAll("path")
+      .classed("active", null);
+
+  center_x = (extent[0][0]+extent[1][0])/2
+  center_y = (extent[0][1]+extent[1][1])/2
+
+  g   .transition()
+      .duration(750)
+      .attr("transform", "translate(" + width/2 + "," + height/2 +
+            ")scale(" + 6 + ")translate(" + -center_x + "," + -center_y + ")")
+      .style("stroke-width", 1.5 / 6);
+
+  myCircles . transition()
+           . duration(750)
+           .attr("transform", "translate(" + width/2 + "," + height/2 +
+            ")scale(" + 6 + ")translate(" + -center_x + "," + -center_y + ")")
+           .style("stroke-width", 1.5 / 6)
+           .attr('r',1.3/2)
   drawScatterPlot(selectedCircles)
 }
+
+
+
+
+
+
+
+
 
 function sortNumber(a, b) {
   return a - b;
@@ -226,21 +202,21 @@ function drawScatterPlot(selectedCircles) {
     cur_reviews.sort(sortNumber)
     cur_availability.sort(sortNumber)
     // calculate quantiles
-    var min = d3.min(cur_price);  
-    var min_reviews = d3.min(cur_reviews);  
-    var min_availability = d3.min(cur_availability);  
-    var q25 = cur_price[Math.floor(length*.25) - 1];  
-    var q25_reviews = cur_reviews[Math.floor(length*.25) - 1];  
-    var q25_availability = cur_availability[Math.floor(length*.25) - 1];  
-    var q50 = cur_price[Math.floor(length*.5) - 1];  
-    var q50_reviews = cur_reviews[Math.floor(length*.5) - 1];  
-    var q50_availability = cur_availability[Math.floor(length*.5) - 1];  
-    var q75 = cur_price[Math.floor(length*.75) - 1];    
-    var q75_reviews = cur_reviews[Math.floor(length*.75) - 1];    
-    var q75_availability = cur_availability[Math.floor(length*.75) - 1];    
-    var max = d3.max(cur_price);  
-    var max_reviews = d3.max(cur_reviews);  
-    var max_availability = d3.max(cur_availability);  
+    var min = d3.min(cur_price);
+    var min_reviews = d3.min(cur_reviews);
+    var min_availability = d3.min(cur_availability);
+    var q25 = cur_price[Math.floor(length*.25) - 1];
+    var q25_reviews = cur_reviews[Math.floor(length*.25) - 1];
+    var q25_availability = cur_availability[Math.floor(length*.25) - 1];
+    var q50 = cur_price[Math.floor(length*.5) - 1];
+    var q50_reviews = cur_reviews[Math.floor(length*.5) - 1];
+    var q50_availability = cur_availability[Math.floor(length*.5) - 1];
+    var q75 = cur_price[Math.floor(length*.75) - 1];
+    var q75_reviews = cur_reviews[Math.floor(length*.75) - 1];
+    var q75_availability = cur_availability[Math.floor(length*.75) - 1];
+    var max = d3.max(cur_price);
+    var max_reviews = d3.max(cur_reviews);
+    var max_availability = d3.max(cur_availability);
 
     var price_metrics = [min, q25, q75, max, q50]
     var review_metrics = [min_reviews, q25_reviews, q75_reviews, max_reviews, q50_reviews]
