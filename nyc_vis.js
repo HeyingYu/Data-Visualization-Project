@@ -2,24 +2,12 @@ var svg = d3.select("svg")
     width = +svg.attr("width"),
     height = +svg.attr("height");
 
-var brush = d3.brush().extent([[0,0],[height,width]]).on("brush end", updateChart),idleTimeout,idleDelay = 350;
-var idleTimeout
-function idled() { idleTimeout = null; }
-  svg .append("rect")
-      .attr("class", "background")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("fill","white")
-      .on("click", brush);
-
-function create_dom_element(element_name)  {
-  return document.createElementNS('http://www.w3.org/2000/svg', element_name);
-}
+var svg1 = d3.select('#scatter_plot').attr("transform", "translate(" + 550 + "," + -850 + ")");
+var brush2 = d3.brush().extent([[0,0],[height,width]]).on("brush end", scatter_brushed)
 
 
+var clicked_flag = true;
 function process_data(){
-    var width = 460,
-    height = 1000;
     var svg1 = d3.select('body').append('svg').attr('width', width).attr('height', height).attr('id','data');
     all_mins = {}, all_maxs = {};
 
@@ -33,9 +21,17 @@ function process_data(){
     luminance_scale = d3.scaleLinear().range([81,27]).domain(price_domain)
 }
 
-
-
 function plot_it()  {
+  var brush = d3.brush().extent([[0,0],[height,width]]).on("brush end", updateChart)
+  svg .append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill","white")
+      .on("brush", brush)
+      .on("dblclick",clicked)
+
+
   var path = d3.geoPath()
       .projection(d3.geoConicConformal()
       .parallels([33, 45])
@@ -81,9 +77,6 @@ function plot_it()  {
           .style("opacity", 0);
   })
 
-
-
-
   var myCircle =svg.append('g')
      .attr("id","data")
      .selectAll('cirlce')
@@ -104,196 +97,68 @@ function plot_it()  {
      .attr('number_of_reviews', function(d){ return d.number_of_reviews})
      .attr('reviews_per_month', function(d){ return d.reviews_per_month})
      .attr('price', function(d){ return d.price})
+     .attr('latitude',function(d){return d.latitude})
+     .attr('longitude',function(d){return d.longitude})
      .attr('room_type', function(d){ return d.room_type})
+     .attr('id',function(d,i) {return i})
+  svg.on("dblclick",clicked)
+  plot_scatter()
+  svg1.call(brush2)
 
 
-  svg.on("dblclick",function(){
+
+
+
+  function clicked(){
+      if(clicked_flag == true){
+          var width_=width/2,height_=height/2,x_ = -width/2,y_ = -height_,k=1,path_stroke_width = 1.5,
+              circle_stroke_width = 0.1,r=1.3;
+          clicked_flag = false;
+          }
+      else{
+          var extent = d3.mouse(this)
+          var center_x = extent[0],center_y = extent[1]
+          var width_=width/2,height_=height/2,x_ = -center_x,y_ = -center_y,k=6,path_stroke_width = 1.5/6,
+              circle_stroke_width = 1.5/6,r=1.3/2
+          clicked_flag = true
+      }
+
       g   .transition()
-      .duration(750)
-      .attr("transform", "translate(" + width/2 + "," + height/2 +
-            ")scale(" + 1 + ")translate(" + -width/2 + "," + -height/2 + ")")
-      .style("stroke-width", 1.5);
+          .duration(750)
+          .attr("transform", "translate(" + width_ + "," + height_ +
+                ")scale(" + k + ")translate(" + x_ + "," + y_ + ")")
+          .style("stroke-width", path_stroke_width);
 
-     svg .selectAll("circle"). transition()
-           . duration(750)
-           .attr("transform", "translate(" + width/2 + "," + height/2 +
-            ")scale(" + 1 + ")translate(" + -width/2 + "," + -height/2 + ")")
-           .style("stroke-width", 0.1)
-           .attr('r',1.3)
-  });
-
-   plot_scatter()
-}
-
-
-
-
-
-
-
-function updateChart() {
-
-  var projection=d3.geoConicConformal()
-      .parallels([33, 45])
-      .rotate([96, -39])
-      .fitSize([width, height], nyc_data)
-  // Get the selection coordinate
-    extent = d3.event.selection
-//
-  var myCircles = svg.selectAll('circle')
-  var selectedCircles = myCircles.filter(function(d)  {
-    var cur_long = projection([d.longitude,d.latitude])[0];
-    var cur_lat = projection([d.longitude,d.latitude])[1];
-    // Is the circle in the selection?
-    var isBrushed = extent[0][0] <= cur_long && extent[1][0] >= cur_long && // Check X coordinate
-              extent[0][1] <= cur_lat && extent[1][1] >= cur_lat  // And Y coordinate
-    return isBrushed;
-  })
-  selectedCircles.attr('fill', d => d3.hcl(10,40,65))
-
-
-  g   .selectAll("path")
-      .classed("active", null);
-
-  center_x = (extent[0][0]+extent[1][0])/2
-  center_y = (extent[0][1]+extent[1][1])/2
-
-  g   .transition()
-      .duration(750)
-      .attr("transform", "translate(" + width/2 + "," + height/2 +
-            ")scale(" + 6 + ")translate(" + -center_x + "," + -center_y + ")")
-      .style("stroke-width", 1.5 / 6);
-
-  myCircles . transition()
-           . duration(750)
-           .attr("transform", "translate(" + width/2 + "," + height/2 +
-            ")scale(" + 6 + ")translate(" + -center_x + "," + -center_y + ")")
-           .style("stroke-width", 1.5 / 6)
-           .attr('r',1.3/2)
-  drawScatterPlot(selectedCircles)
-}
-
-
-
-
-
-
-
-
-
-function sortNumber(a, b) {
-  return a - b;
-}
-
-
-// Function that is triggered when brushing is performed
-function drawScatterPlot(selectedCircles) {
-  var cur_price = [];
-  var cur_reviews = [];
-  var cur_availability = [];
-  var length = selectedCircles._groups[0].length
-  if (selectedCircles._groups[0].length != 0) {
-    for (i = 0; i < length; i++) {
-      cur_price.push(parseInt(selectedCircles._groups[0][i].getAttribute('price')));
-      cur_reviews.push(parseInt(selectedCircles._groups[0][i].getAttribute('reviews_per_month')));
-      cur_availability.push(parseInt(selectedCircles._groups[0][i].getAttribute('availability_365')));
-    }
-    cur_price.sort(sortNumber)
-    cur_reviews.sort(sortNumber)
-    cur_availability.sort(sortNumber)
-    // calculate quantiles
-    var min = d3.min(cur_price);
-    var min_reviews = d3.min(cur_reviews);
-    var min_availability = d3.min(cur_availability);
-    var q25 = cur_price[Math.floor(length*.25) - 1];
-    var q25_reviews = cur_reviews[Math.floor(length*.25) - 1];
-    var q25_availability = cur_availability[Math.floor(length*.25) - 1];
-    var q50 = cur_price[Math.floor(length*.5) - 1];
-    var q50_reviews = cur_reviews[Math.floor(length*.5) - 1];
-    var q50_availability = cur_availability[Math.floor(length*.5) - 1];
-    var q75 = cur_price[Math.floor(length*.75) - 1];
-    var q75_reviews = cur_reviews[Math.floor(length*.75) - 1];
-    var q75_availability = cur_availability[Math.floor(length*.75) - 1];
-    var max = d3.max(cur_price);
-    var max_reviews = d3.max(cur_reviews);
-    var max_availability = d3.max(cur_availability);
-
-    var price_metrics = [min, q25, q75, max, q50]
-    var review_metrics = [min_reviews, q25_reviews, q75_reviews, max_reviews, q50_reviews]
-    var availability_metrics = [min_availability, q25_availability, q75_availability, max_availability, q50_availability]
-    console.log(availability_metrics)
-
-    var chart = new CanvasJS.Chart("PricePlot", {
-      animationEnabled: true,
-      title:{
-        text: "Price Destribution"
-      },
-      axisY: {
-        title: "Price Per Night (in USD)",
-        prefix: "$",
-        interval: 100
-      },
-      data: [{
-        type: "boxAndWhisker",
-        upperBoxColor: "#FFC28D",
-        lowerBoxColor: "#9ECCB8",
-        color: "black",
-        yValueFormatString: "$#,##0",
-        dataPoints: [
-          { label: "Price", y: price_metrics }
-        ]
-      }]
-    });
-    chart.render();
-
-    var reviewchart = new CanvasJS.Chart("ReviewPlot", {
-      animationEnabled: true,
-      title:{
-        text: "Reviews Per Month Destribution"
-      },
-      axisY: {
-        title: "Review Per Month",
-        prefix: "#",
-        interval: 3
-      },
-      data: [{
-        type: "boxAndWhisker",
-        upperBoxColor: "#FFC28D",
-        lowerBoxColor: "#9ECCB8",
-        color: "black",
-        yValueFormatString: "$#,##0",
-        dataPoints: [
-          { label: "Review", y: review_metrics }
-        ]
-      }]
-    });
-    reviewchart.render();
-
-
-    var availabilitychart = new CanvasJS.Chart("AvailabilityPlot", {
-      animationEnabled: true,
-      title:{
-        text: "Availability Destribution"
-      },
-      axisY: {
-        title: "Availability per year",
-        prefix: "#",
-        interval: 60
-      },
-      data: [{
-        type: "boxAndWhisker",
-        upperBoxColor: "#FFC28D",
-        lowerBoxColor: "#9ECCB8",
-        color: "black",
-        yValueFormatString: "$#,##0",
-        dataPoints: [
-          { label: "Availability", y: availability_metrics }
-        ]
-      }]
-    });
-    availabilitychart.render();
+      svg .selectAll("circle"). transition()
+          . duration(750)
+          .attr("transform", "translate(" + width_ + "," + height_ +
+                ")scale(" + k + ")translate(" + x_ + "," + y_ + ")")
+          .style("stroke-width", circle_stroke_width)
+          .attr('r',r)
   }
 
+  function updateChart() {
+      var projection=d3.geoConicConformal()
+        .parallels([33, 45])
+        .rotate([96, -39])
+        .fitSize([width, height], nyc_data)
+
+      var extent = d3.event.selection
+      var myCircles = svg.selectAll('circle')
+//      myCircles.attr('fill',function(d){
+//         return d3.hcl(hue_scale(d.price),chroma_scale(d.price),luminance_scale(d.price)
+//      })
+      var selectedCircles = myCircles.filter(function(d)  {
+          var cur_long = projection([d.longitude,d.latitude])[0];
+          var cur_lat = projection([d.longitude,d.latitude])[1];
+          // Is the circle in the selection?
+          var isBrushed = extent[0][0] <= cur_long && extent[1][0] >= cur_long && // Check X coordinate
+                          extent[0][1] <= cur_lat && extent[1][1] >= cur_lat  // And Y coordinate
+          return isBrushed;
+          })
+
+      selectedCircles.attr('fill', d => d3.hcl(10,40,65))
+  }
 }
 
 function create_axes_example1(base_svg, y_shift, att_scale)  {
@@ -310,13 +175,9 @@ function create_axes_example1(base_svg, y_shift, att_scale)  {
   d3.select('#bottomaxis').selectAll('line').remove()
 }
 
-
 function plot_scatter()  {
-  var svg1 = d3.select('#scatter_plot');
   var x_range_pad = 50, y_range_pad = 130;
   var width = svg1.attr('width'), height = svg1.attr('height');
-
-  console.log("ba")
 
   var att_scale = d3.scaleBand().domain(selected_atts).range([y_range_pad,height-x_range_pad]).paddingInner(0.2);
   var plot_height = att_scale.bandwidth();
@@ -327,7 +188,8 @@ function plot_scatter()  {
     y_quantitative_scales[att] = d3.scaleLinear().domain([extent[0],extent[1]]).range([plot_height,0]).nice();
   });
 
-  svg1.selectAll('cols').data(selected_atts).enter().append('g')
+
+  svg1.selectAll('cols').data(selected_atts).enter().append('g').attr('class','column')
     .attr('transform', d => 'translate('+att_scale(d)+',0)')
     .selectAll('rows').data((d,i) => {
       var unique_rows = selected_atts.filter((_,j) => i <= j);
@@ -336,18 +198,54 @@ function plot_scatter()  {
     .enter().append('g')
     .attr('transform', d => 'translate(20,'+att_scale(d[1])+')').attr('class', 'splom')
     .selectAll('points').data(att => {
-      return airbnb_data.map(d => [d[att[0]], d[att[1]]]);
+      return airbnb_data.map(
+      function(d,i){
+           return [d[att[0]], d[att[1]],i]
+      })
     })
     .enter().append('circle')
     .attr('r', 1).attr('fill', d3.hcl(20,60,70)).attr('opacity', 0.4)
 
   svg1.selectAll('.splom').each(function(att)  {
     var scale_x = x_quantitative_scales[att[0]], scale_y = y_quantitative_scales[att[1]];
-    d3.select(this).selectAll('circle').attr('cx', d => scale_x(d[0])).attr('cy', d => scale_y(d[1]))
+    d3.select(this).selectAll('circle').attr('cx', d => scale_x(d[0])).attr('cy', d => scale_y(d[1])).attr('id',d=>d[2])
     d3.select(this).append('g').attr('transform', 'translate(0,0)').call(d3.axisLeft(scale_y).ticks(4))
-    d3.select(this).append('g').attr('transform', 'translate(0,'+plot_height+')').call(d3.axisBottom(scale_x).ticks(4))
+    a = d3.select(this).append('g').attr('transform', 'translate(0,'+plot_height+')').call(d3.axisBottom(scale_x).ticks(4))
   })
-
   create_axes_example1(svg1,(height-x_range_pad+20),att_scale)
 }
 
+
+function scatter_brushed(){
+  var width = svg1.attr('width'), height = svg1.attr('height');
+  var extent = d3.event.selection
+  var  flag = ture;
+  var selected_column
+  var column_group = svg1.selectAll('.column').filter(function(d){
+        var currentx = d3.select(this).attr("transform");
+        translate_x = currentx.slice(currentx.indexOf("(")+1, currentx.indexOf(")")).split(",")[0]
+        if (extent[0][0] <= translate_x && flag ==true)
+           console.log(translate_x)
+           flag = false
+           return true
+           }
+        else {
+           selected_column = d3.select(this)
+           return false
+        }
+  })
+
+
+//      var myCircles = svg.selectAll('circle')
+//      var selectedCircles = myCircles.filter(function(d)  {
+//          var cur_long = projection([d.longitude,d.latitude])[0];
+//          var cur_lat = projection([d.longitude,d.latitude])[1];
+//          // Is the circle in the selection?
+//          var isBrushed = extent[0][0] <= cur_long && extent[1][0] >= cur_long && // Check X coordinate
+//                          extent[0][1] <= cur_lat && extent[1][1] >= cur_lat  // And Y coordinate
+//          return isBrushed;
+//          })
+//
+//      selectedCircles.attr('fill', d => d3.hcl(10,40,65))
+//
+}
