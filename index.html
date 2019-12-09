@@ -2,7 +2,7 @@
 <html lang='en'>
   <head>
     <meta charset='utf-8'>
-    <title>Assignment 1 - Populating the DOM with graphical marks</title>
+    <title>NYC Airbnb Visualizatoin</title>
     <script type='text/javascript' src='d3.js'></script>
   </head>
   <style>
@@ -25,29 +25,24 @@
     }
   </style>
   <body>
+  <p style="text-align:center;font-size:36px;">New York City Airbnb Map Visualization</p>
   <div style="width: 100%; overflow: hidden;">
-    <div style="width: 960px; float: left;">
+    <div style="width: 960px; height: 800px; float: left;">
       <svg width="550" height="720" id="dataviz_brushing"></svg>
       <svg width="800" height="800" id="scatter_plot"></svg>
-    </div>
-    <div style="margin-left: 960px;">
-      <div id="PricePlot" align="center" style="height: 300px; width: 300px;"></div>
-      <div id="AvailabilityPlot" align="center" style="height: 300px; width: 300px;"></div>
-      <div id="ReviewPlot" align="center" style="height: 300px; width: 300px;"></div>
     </div>
     <div id='neighborhoodPopover'> </div>
   </div>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/topojson.v1.min.js"></script>
-  <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
   <script type='text/javascript' src='nyc_vis.js'></script>
   <script type='text/javascript'>
     d3.json('updated-nyc.json').then(function(data)  {
         nyc_data = data;
-        return d3.csv("AB_NYC_2019_test.csv");
+        return d3.csv("AB_NYC_2019_shuffled.csv");
       }).then(function(data)  {
         airbnb_data = data;
-        selected_atts = ['availability_365','lattitude','longitude', 'price', 'minimum_nights', 'reviews_per_month']
+        selected_atts = ['availability_365', 'price', 'minimum_nights', 'reviews_per_month']
         airbnb_data.forEach(d => {
           selected_atts.forEach(att => {
             d[att] = +d[att];
