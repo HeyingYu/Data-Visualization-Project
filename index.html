@@ -39,7 +39,7 @@
   <script type='text/javascript'>
     d3.json('updated-nyc.json').then(function(data)  {
         nyc_data = data;
-        return d3.csv("AB_NYC_2019_shuffled.csv");
+        return d3.csv("AB_NYC_2019_cleaned2.csv");
       }).then(function(data)  {
         airbnb_data = data;
         selected_atts = ['availability_365', 'price', 'minimum_nights', 'reviews_per_month']

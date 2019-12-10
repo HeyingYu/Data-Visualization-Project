@@ -9,15 +9,19 @@ var clicked_flag = true;
 function process_data() {
   // var svg1 = d3.select('body').append('svg').attr('width', width).attr('height', height).attr('id', 'data');
   all_mins = {}, all_maxs = {};
-
   ['price'].forEach(key => {
     all_mins[key] = d3.min(airbnb_data, d => parseInt(d[key]));
     all_maxs[key] = d3.max(airbnb_data, d => parseInt(d[key]));
   });
   price_domain = [all_mins['price'], all_maxs['price']]
-  hue_scale = d3.scaleLinear().range([60, 114]).domain(price_domain)
-  chroma_scale = d3.scaleLinear().range([35, 32]).domain(price_domain)
-  luminance_scale = d3.scaleLinear().range([81, 27]).domain(price_domain)
+
+  color = [d3.hcl(88,41,86),d3.hcl(94,64,63),d3.hcl(101,51,51),d3.hcl(97,58,57),d3.hcl(104,58,48)
+            ,d3.hcl(104,35,33),d3.hcl(126,33,26),d3.hcl(136,24,21),d3.hcl(136,16,13)]
+  color_scale = d3.scaleQuantize() . domain(price_domain) . range(color)
+  opacity_scale = d3.scaleQuantize().domain(price_domain).range([0.3,1])
+//  hue_scale = d3.scaleLinear().range([60, 114]).domain(price_domain)
+//  chroma_scale = d3.scaleLinear().range([35, 32]).domain(price_domain)
+//  luminance_scale = d3.scaleLinear().range([81, 27]).domain(price_domain)
 }
 
 function plot_it() {
@@ -84,7 +88,8 @@ function plot_it() {
     })
     .attr('r', 1.3)
     .attr('fill', function (d) {
-      return d3.hcl(hue_scale(d.price), chroma_scale(d.price), luminance_scale(d.price))
+//    return d3.hcl(hue_scale(d.price), chroma_scale(d.price), luminance_scale(d.price))
+        return color_scale(d.price)
     })
     .attr('stroke', "black")
     .attr("stroke-width", 0.1)
@@ -222,12 +227,12 @@ function plot_scatter() {
       }).attr('fill', d => d3.hcl(100,40,65))
 
       svg.selectAll('circle').attr('fill', function (d) {
-        return d3.hcl(hue_scale(d.price), chroma_scale(d.price), luminance_scale(d.price))
+        return color_scale(d.price)
       })
       svg.selectAll('circle').filter(function() {
         return ids[d3.select(this)._groups[0][0].id]
 
-      }).attr('fill', 'black')
+      }).attr('fill', 'red').raise()
     });
     var scale_x = x_quantitative_scales[att[0]], scale_y = y_quantitative_scales[att[1]];
     d3.select(this).selectAll('circle').attr('cx', d => scale_x(d[0])).attr('cy', d => scale_y(d[1])).attr('id', d => d[2])
